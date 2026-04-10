@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 动态标题动画 */
+        .hero {
+            text-align: center;
+            margin-bottom: 28px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .hero h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #a5b4fc, #c084fc);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero .sub {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: rgba(20, 20, 40, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 60px;
+            animation: fadeInUp 0.5s ease-out;
+            transition: all 0.3s;
+        }
+
+        .path-breadcrumb {
+            font-family: monospace;
+            color: #b9c7ff;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 40px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        button, .upload-btn {
+            background: rgba(102, 126, 234, 0.8);
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 13px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.4s, height 0.4s;
+        }
+
+        button:active::before {
+            width: 120px;
+            height: 120px;
+        }
+
+        button:hover {
+            background: #5d6fd3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+
+        .admin-btn {
+            background: rgba(180, 100, 70, 0.9);
+        }
+        .admin-btn:hover {
+            background: #c2713a;
+        }
+        .logout-btn {
+            background: rgba(180, 70, 70, 0.9);
+        }
+        .logout-btn:hover {
+            background: #b44;
+        }
+
+        .file-tree {
+            margin-top: 10px;
+        }
+
+        .folder-item, .file-item {
+            margin-left: 0;
+            padding: 0;
+        }
+
+        .folder-header, .file-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 24px;
+            background: rgba(20, 20, 40, 0.4);
+            margin: 4px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .folder-header:hover, .file-row:hover {
+            background: rgba(102, 126, 234, 0.25);
+            transform: translateX(4px);
+        }
+
+        .folder-children {
+            margin-left: 28px;
+            overflow: hidden;
+            transition: all 0.3s ease-out;
+        }
+
+        .folder-children:not(.open) {
+            display: none;
+        }
+
+        .folder-children.open {
+            display: block;
+            animation: slideDown 0.25s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .icon {
+            font-size: 22px;
+            user-select: none;
+            transition: transform 0.2s;
+        }
+
+        .folder-header:hover .icon {
+            transform: scale(1.05);
+        }
+
+        .file-name, .folder-name {
+            font-weight: 500;
+            color: white;
+            word-break: break-all;
+            flex: 2;
+        }
+
+        .file-meta {
+            font-size: 11px;
+            color: #aaa;
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .small-btn {
+            background: rgba(80, 80, 120, 0.7);
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 30px;
+            border: none;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .small-btn:hover {
+            background: rgba(102, 126, 234, 0.9);
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        .small-btn:active {
+            transform: translateY(1px);
+        }
+
+        .admin-only {
+            display: none;
+        }
+        .admin-only.visible {
+            display: inline-flex;
+        }
+
+        /* 登录弹窗动画 */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .login-card {
+            background: rgba(30,30,50,0.98);
+            border-radius: 48px;
+            padding: 32px;
+            width: 360px;
+            border: 1px solid rgba(102,126,234,0.6);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .login-card h3 {
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .login-card input {
+            width: 100%;
+            margin: 12px 0;
+            padding: 12px 16px;
+            background: rgba(20,20,40,0.9);
+            border: 1px solid #667eea;
+            border-radius: 40px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .login-card input:focus {
+            outline: none;
+            border-color: #a5b4fc;
+            box-shadow: 0 0 8px rgba(165,180,252,0.5);
+        }
+        .error-msg {
+            color: #ff9e8f;
+            margin-top: 12px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .flex-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #a5b4fc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(102,126,234,0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .card {
+            background: rgba(30, 30, 50, 0.75);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(102,126,234,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .clickable-area {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        /* 消息提示动画 */
+        .toast-message {
+            animation: slideInRight 0.3s ease-out;
+        }
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* 刷新按钮旋转动画 */
+        .refreshing {
+            animation: rotate 0.5s ease;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 上传进度条样式 */
+        .upload-progress-overlay {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            max-width: 400px;
+            background: rgba(20, 20, 40, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 16px 20px;
+            z-index: 10000;
+            border: 1px solid rgba(102,126,234,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            animation: slideInLeft 0.3s ease-out;
+        }
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .upload-progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #b9c7ff;
+        }
+        .progress-bar-container {
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            height: 8px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #667eea, #a5b4fc);
+            width: 0%;
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.2s ease;
+        }
+        .upload-file-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .upload-file-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .upload-file-name {
+            flex: 1;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .upload-file-status {
+            font-size: 11px;
+        }
+        .status-success { color: #4ade80; }
+        .status-error { color: #f87171; }
+        .status-uploading { color: #a5b4fc; animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .close-progress-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 5px;
+        }
+        .close-progress-btn:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <div class="loading">
+        <div class="spinner"></div>
+        <span>正在加载目录树...</span>
+    </div>
+</div>
+
+<script>
+    // ======================= 配置 =======================
+    const API = "api.php";
+    let isAdmin = false;
+    let currentUser = null;
+    let fullTreeData = null;
+    let uploadProgressPanel = null; // 进度面板引用
+
+    const appEl = document.getElementById("app");
+
+    // ======================= 上传进度面板 =======================
+    function showUploadProgress(files) {
+        // 关闭已有面板
+        if (uploadProgressPanel) {
+            uploadProgressPanel.remove();
+        }
+        
+        const panel = document.createElement("div");
+        panel.className = "upload-progress-overlay";
+        panel.id = "uploadProgressPanel";
+        
+        const fileItemsHtml = files.map((file, idx) => `
+            <div class="upload-file-item" data-file-index="${idx}">
+                <span class="upload-file-name">${escapeHtml(file.name)}</span>
+                <span class="upload-file-status" id="fileStatus_${idx}">⏳ 等待中</span>
+            </div>
+        `).join('');
+        
+        panel.innerHTML = `
+            <div class="upload-progress-header">
+                <span>📤 正在上传 (0/${files.length})</span>
+                <button class="close-progress-btn" id="closeProgressBtn">✕</button>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="uploadProgressFill"></div>
+            </div>
+            <div class="upload-file-list">
+                ${fileItemsHtml}
+            </div>
+        `;
+        
+        document.body.appendChild(panel);
+        uploadProgressPanel = panel;
+        
+        // 关闭按钮
+        document.getElementById("closeProgressBtn")?.addEventListener("click", () => {
+            if (uploadProgressPanel) uploadProgressPanel.remove();
+            uploadProgressPanel = null;
+        });
+        
+        return panel;
+    }
+    
+    function updateUploadProgress(current, total, fileIndex, status, fileName) {
+        if (!uploadProgressPanel) return;
+        
+        const percent = Math.round((current / total) * 100);
+        const fillBar = document.getElementById("uploadProgressFill");
+        if (fillBar) fillBar.style.width = `${percent}%`;
+        
+        const header = uploadProgressPanel.querySelector(".upload-progress-header span");
+        if (header) header.innerHTML = `📤 正在上传 (${current}/${total})`;
+        
+        if (fileIndex !== undefined) {
+            const statusSpan = document.getElementById(`fileStatus_${fileIndex}`);
+            if (statusSpan) {
+                statusSpan.innerHTML = status;
+                statusSpan.className = `upload-file-status ${status.includes('成功') ? 'status-success' : (status.includes('失败') ? 'status-error' : 'status-uploading')}`;
+            }
+        }
+        
+        // 完成后自动关闭
+        if (current === total) {
+            setTimeout(() => {
+                if (uploadProgressPanel) {
+                    uploadProgressPanel.remove();
+                    uploadProgressPanel = null;
+                }
+            }, 2000);
+        }
+    }
+    
+    function closeUploadProgress() {
+        if (uploadProgressPanel) {
+            uploadProgressPanel.remove();
+            uploadProgressPanel = null;
+        }
+    }
+
+    // ======================= 登录弹窗 =======================
+    function showLoginModal() {
+        const existing = document.getElementById("loginModal");
+        if (existing) existing.remove();
+        
+        const modal = document.createElement("div");
+        modal.className = "login-modal";
+        modal.id = "loginModal";
+        modal.innerHTML = `
+            <div class="login-card">
+                <h3>管理员登录</h3>
+                <input type="text" id="loginUser" placeholder="请输入用户名" autocomplete="off">
+                <input type="password" id="loginPass" placeholder="请输入密码" autocomplete="off">
+                <button id="confirmLoginBtn" style="width:100%; background:#667eea;">登录</button>
+                <div id="loginError" class="error-msg"></div>
+                <button id="closeModalBtn" style="width:100%; margin-top:12px; background:#444;">取消</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        const userInput = document.getElementById("loginUser");
+        const passInput = document.getElementById("loginPass");
+        if (userInput) userInput.value = "";
+        if (passInput) passInput.value = "";
+        
+        document.getElementById("confirmLoginBtn").onclick = async () => {
+            const user = document.getElementById("loginUser").value.trim();
+            const pwd = document.getElementById("loginPass").value;
+            if (!user || !pwd) {
+                document.getElementById("loginError").innerText = "用户名和密码不能为空";
+                return;
+            }
+            try {
+                const res = await fetch(`${API}?action=login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: user, password: pwd })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    isAdmin = true;
+                    currentUser = user;
+                    localStorage.setItem("file_admin", JSON.stringify({ user: currentUser, token: data.token }));
+                    modal.remove();
+                    showMessage(" 登录成功，欢迎管理员！");
+                    loadTree();
+                } else {
+                    document.getElementById("loginError").innerText = data.error || "登录失败";
+                }
+            } catch(e) {
+                document.getElementById("loginError").innerText = "网络错误: " + e.message;
+            }
+        };
+        document.getElementById("closeModalBtn").onclick = () => modal.remove();
+    }
+
+    function logout() {
+        isAdmin = false;
+        currentUser = null;
+        localStorage.removeItem("file_admin");
+        loadTree();
+        showMessage("已退出管理员模式", false);
+    }
+
+    function checkLocalAdmin() {
+        const saved = localStorage.getItem("file_admin");
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.user) {
+                    isAdmin = true;
+                    currentUser = data.user;
+                }
+            } catch(e) {}
+        }
+    }
+
+    // ======================= 加载目录树 =======================
+    async function loadTree() {
+        appEl.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <span>正在扫描目录...</span>
+            </div>
+        `;
+        
+        try {
+            const res = await fetch(`${API}?action=list&_=${Date.now()}`);
+            const data = await res.json();
+            if (data.success) {
+                fullTreeData = data.tree;
+                renderMainUI();
+            } else {
+                appEl.innerHTML = `<div class="card" style="padding:40px; text-align:center;">❌ 加载失败: ${data.error || "未知错误"}</div>`;
+            }
+        } catch(e) {
+            console.error(e);
+            appEl.innerHTML = `<div class="card" style="padding:40px; text-align:center;">❌ 网络错误: ${e.message}<br><small>请确保 api.php 存在且服务器支持PHP</small></div>`;
+        }
+    }
+
+    window.toggleFolder = function(folderId, event) {
+        if (event) event.stopPropagation();
+        const el = document.getElementById(folderId);
+        if (el) {
+            el.classList.toggle("open");
+            const parent = event?.currentTarget?.closest('.folder-header');
+            if (parent) {
+                const icon = parent.querySelector('.icon');
+                if (icon) {
+                    icon.style.transform = 'scale(1.1)';
+                    setTimeout(() => { if(icon) icon.style.transform = ''; }, 150);
+                }
+            }
+        }
+    };
+
+    function formatBytes(bytes) {
+        if (!bytes && bytes !== 0) return "0 B";
+        if (bytes === 0) return "0 B";
+        const k = 1024;
+        const sizes = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === "&") return "&amp;";
+            if (m === "<") return "&lt;";
+            if (m === ">") return "&gt;";
+            return m;
+        });
+    }
+    
+    function escapeAttr(str) {
+        if (!str) return "";
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showMessage(msg, isError = false) {
+        const div = document.createElement("div");
+        div.className = "toast-message";
+        div.style.cssText = `position:fixed; bottom:20px; right:20px; background:${isError ? '#b44' : '#2c6e2c'}; color:white; padding:10px 24px; border-radius:40px; z-index:9999; font-size:14px; box-shadow:0 4px 15px rgba(0,0,0,0.3); backdrop-filter:blur(4px);`;
+        div.innerText = msg;
+        document.body.appendChild(div);
+        setTimeout(() => {
+            div.style.opacity = '0';
+            div.style.transform = 'translateX(50px)';
+            div.style.transition = 'all 0.3s';
+            setTimeout(() => div.remove(), 300);
+        }, 2500);
+    }
+
+    // ======================= 管理员操作（带进度显示） =======================
+    async function uploadFiles(files, targetDir) {
+        if (!files || files.length === 0) return;
+        
+        // 显示进度面板
+        showUploadProgress(files);
+        let completed = 0;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            updateUploadProgress(completed, files.length, i, `⏳ 上传中 ${Math.round((file.loaded || 0) / file.size * 100) || 0}%`, file.name);
+            
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("target_dir", targetDir);
+            formData.append("username", currentUser);
+            
+            try {
+                // 使用 XMLHttpRequest 来追踪上传进度
+                const xhr = new XMLHttpRequest();
+                const uploadPromise = new Promise((resolve, reject) => {
+                    xhr.upload.addEventListener("progress", (e) => {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            updateUploadProgress(completed, files.length, i, `⏳ 上传中 ${percent}%`, file.name);
+                        }
+                    });
+                    xhr.onload = () => {
+                        if (xhr.status === 200) {
+                            try {
+                                const result = JSON.parse(xhr.responseText);
+                                if (result.success) {
+                                    resolve({ success: true, name: file.name });
+                                } else {
+                                    reject(new Error(result.error || "上传失败"));
+                                }
+                            } catch(e) {
+                                reject(new Error("解析响应失败"));
+                            }
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}`));
+                        }
+                    };
+                    xhr.onerror = () => reject(new Error("网络错误"));
+                    xhr.open("POST", `${API}?action=upload`);
+                    xhr.send(formData);
+                });
+                
+                await uploadPromise;
+                completed++;
+                updateUploadProgress(completed, files.length, i, "✅ 上传成功", file.name);
+                
+            } catch(e) {
+                completed++;
+                updateUploadProgress(completed, files.length, i, `❌ 失败: ${e.message}`, file.name);
+            }
+        }
+        
+        // 全部完成，刷新树
+        setTimeout(() => {
+            loadTree();
+        }, 500);
+    }
+
+    function downloadFile(filePath) {
+        showMessage(`⬇️ 开始下载: ${filePath.split('/').pop()}`);
+        window.location.href = `${API}?action=download&path=${encodeURIComponent(filePath)}`;
+    }
+
+    async function deleteItem(path) {
+        if (!confirm(`⚠️ 确定要删除 "${path}" 吗？\n删除后无法恢复！`)) return;
+        const formData = new FormData();
+        formData.append("path", path);
+        formData.append("username", currentUser);
+        const res = await fetch(`${API}?action=delete`, { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.success) {
+            showMessage("🗑️ 删除成功");
+            loadTree();
+        } else {
+            showMessage("删除失败: " + data.error, true);
+        }
+    }
+
+    async function createFolder(parentPath, folderName) {
+        const formData = new FormData();
+        formData.append("parent", parentPath);
+        formData.append("name", folderName);
+        formData.append("username", currentUser);
+        const res = await fetch(`${API}?action=mkdir`, { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.success) {
+            showMessage(`📁 已创建文件夹: ${folderName}`);
+            loadTree();
+        } else {
+            showMessage("创建失败: " + data.error, true);
+        }
+    }
+
+    function openUploadDialog(targetDir) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.multiple = true;
+        input.onchange = (ev) => {
+            const files = Array.from(ev.target.files);
+            if (files.length) {
+                uploadFiles(files, targetDir);
+            }
+        };
+        input.click();
+    }
+
+    // ======================= 渲染主界面 =======================
+    function renderMainUI() {
+        if (!fullTreeData) return;
+
+        function renderNode(node) {
+            if (node.type === 'file') {
+                return `
+                    <div class="file-item" style="animation: fadeInUp 0.3s ease-out;">
+                        <div class="file-row">
+                            <span class="icon">📄</span>
+                            <span class="file-name">${escapeHtml(node.name)}</span>
+                            <div class="file-meta">
+                                <span>📦 ${formatBytes(node.size)}</span>
+                                <span>📅 ${node.modified || '未知'}</span>
+                            </div>
+                            <div class="action-group">
+                                <button class="small-btn download-btn" data-path="${escapeAttr(node.path)}">下载</button>
+                                <button class="small-btn delete-btn admin-only ${isAdmin ? 'visible' : ''}" data-path="${escapeAttr(node.path)}">🗑️ 删除</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const folderId = `folder_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+                const hasChildren = node.children && node.children.length > 0;
+                return `
+                    <div class="folder-item" data-folder-path="${escapeAttr(node.path)}" style="animation: fadeInUp 0.3s ease-out;">
+                        <div class="folder-header">
+                            <div class="clickable-area" onclick="toggleFolder('${folderId}', event)">
+                                <span class="icon">📁</span>
+                                <span class="folder-name">${escapeHtml(node.name)}</span>
+                                <span style="font-size:12px; color:#aaa;">${node.children?.length || 0} 项</span>
+                            </div>
+                            <div class="action-group">
+                                <button class="small-btn upload-here-btn admin-only ${isAdmin ? 'visible' : ''}" data-path="${escapeAttr(node.path)}">📤 上传到此</button>
+                                <button class="small-btn mkdir-btn admin-only ${isAdmin ? 'visible' : ''}" data-path="${escapeAttr(node.path)}">➕ 文件夹</button>
+                                <button class="small-btn delete-btn admin-only ${isAdmin ? 'visible' : ''}" data-path="${escapeAttr(node.path)}">🗑️ 删除</button>
+                            </div>
+                        </div>
+                        <div id="${folderId}" class="folder-children">
+                            ${hasChildren ? node.children.map(child => renderNode(child)).join('') : '<div style="padding:12px 24px; color:#aaa;">空文件夹</div>'}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        const rootChildrenHtml = fullTreeData.children?.length 
+            ? fullTreeData.children.map(c => renderNode(c)).join('') 
+            : '<div style="padding:20px; text-align:center; color:#aaa;">暂无任何文件或文件夹qwq</div>';
+
+        const rootHtml = `
+            <div class="folder-item" style="margin-left:0;">
+                <div class="folder-header" style="background:rgba(0,0,0,0.3);">
+                    <div class="clickable-area" onclick="toggleFolder('rootChildrenDir', event)">
+                        <span class="icon"> (♡>𖥦<)/♥ </span>
+                        <span class="folder-name">根目录 /</span>
+                        <span style="font-size:12px; color:#aaa;">${fullTreeData.children?.length || 0} 项</span>
+                    </div>
+                    <div class="action-group">
+                        <button class="small-btn upload-here-btn admin-only ${isAdmin ? 'visible' : ''}" data-path="" title="上传到根目录">📤 上传到此</button>
+                        <button class="small-btn mkdir-btn admin-only ${isAdmin ? 'visible' : ''}" data-path="" title="新建文件夹">创建文件夹</button>
+                    </div>
+                </div>
+                <div id="rootChildrenDir" class="folder-children open">
+                    ${rootChildrenHtml}
+                </div>
+            </div>
+        `;
+
+        appEl.innerHTML = `
+            <div class="hero">
+                <h1>文件</h1>
+                <div class="sub">所有文件可自由下载 | 管理员登录后，每个文件夹旁会出现「上传到此」按钮</div>
+            </div>
+            <div class="status-bar">
+                <div class="path-breadcrumb">当前浏览: 根目录 (所有文件)</div>
+                <div class="flex-row">
+                    <button id="refreshTreeBtn">⟳ 刷新列表</button>
+                    ${!isAdmin ? `<button id="adminLoginBtn" class="admin-btn">管理员登录</button>` : `<button id="logoutAdminBtn" class="logout-btn">🚪 退出管理</button>`}
+                </div>
+            </div>
+            <div class="card" style="padding:20px;">
+                <div class="file-tree" id="fileTreeContainer">
+                    ${rootHtml}
+                </div>
+            </div>
+            <div style="margin-top:16px; text-align:center; color:rgba(255,255,255,0.3); font-size:12px;">
+                💡 提示: 点击文件夹图标或名称展开/收起 | 管理员登录后，每个文件夹旁会显示「上传到此」按钮
+            </div>
+        `;
+
+        const refreshBtn = document.getElementById("refreshTreeBtn");
+        if (refreshBtn) {
+            refreshBtn.addEventListener("click", () => {
+                refreshBtn.classList.add("refreshing");
+                loadTree();
+                setTimeout(() => refreshBtn.classList.remove("refreshing"), 500);
+            });
+        }
+        if (!isAdmin) {
+            document.getElementById("adminLoginBtn")?.addEventListener("click", showLoginModal);
+        } else {
+            document.getElementById("logoutAdminBtn")?.addEventListener("click", logout);
+        }
+
+        const treeContainer = document.getElementById("fileTreeContainer");
+        if (treeContainer) {
+            treeContainer.addEventListener("click", async (e) => {
+                const target = e.target;
+                if (target.classList.contains("download-btn")) {
+                    const path = target.getAttribute("data-path");
+                    if (path) downloadFile(path);
+                }
+                if (isAdmin && target.classList.contains("delete-btn")) {
+                    const delPath = target.getAttribute("data-path");
+                    if (delPath) await deleteItem(delPath);
+                }
+                if (isAdmin && target.classList.contains("upload-here-btn")) {
+                    const folderPath = target.getAttribute("data-path") || "";
+                    openUploadDialog(folderPath);
+                }
+                if (isAdmin && target.classList.contains("mkdir-btn")) {
+                    const parentPath = target.getAttribute("data-path") || "";
+                    const folderName = prompt("请输入新文件夹名称:", "新建文件夹");
+                    if (folderName && folderName.trim()) {
+                        await createFolder(parentPath, folderName.trim());
+                    }
+                }
+            });
+        }
+    }
+
+    checkLocalAdmin();
+    loadTree();
+</script>
+</body>
+</html>

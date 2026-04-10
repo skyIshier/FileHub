@@ -1,0 +1,13 @@
+{
+  "admins": [
+    {
+      "username": "用户名",
+      "password": "密码",
+      "permissions": {
+        "upload": true,
+        "delete": true,
+        "mkdir": true
+      }
+    }
+  ]
+}

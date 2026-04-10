@@ -1,0 +1,341 @@
+此网站可以部署到任何服务器上，但是至少要支持php
+管理员设置在api.php面可以设置管理员账号名和管理员密码
+作者:十二
+q:3787533101
+
+项目网址:https://github.com/skyIshier/FileHub/
+
+
+---
+
+📖 管理员账号设置说明书（超详细版）
+
+---
+
+一、首先，您需要知道这几个文件是干什么的
+
+文件名 作用 您需要做什么
+index.html 网页界面（看到的页面） 不用管
+api.php 后台程序（处理上传下载） 不用管
+admins.json 管理员名单（存账号密码） 主要改这个
+
+💡 简单理解：admins.json 就像一本“通讯录”，里面记录着哪些人可以登录管理后台。
+
+---
+
+二、admins.json 文件长什么样？
+
+用记事本打开后，您会看到类似这样的内容：
+
+```json
+{
+  "admins": [
+    {
+      "username": "用户名",
+      "password": "密码",
+      "permissions": {
+        "upload": true,
+        "delete": true,
+        "mkdir": true
+      }
+    }
+  ]
+}
+```
+
+---
+
+三、每一行的意思（请仔细看）
+
+这一行文字 什么意思？ 举例
+"username" 登录时输入的用户名 "用户名"
+"password" 登录时输入的密码 "密码"
+"upload" 能不能上传文件 true = 能，false = 不能
+"delete" 能不能删除文件 true = 能，false = 不能
+"mkdir" 能不能新建文件夹 true = 能，false = 不能
+
+💡 true 就是“是/允许”，false 就是“否/禁止”
+
+---
+
+四、如何添加一个新的管理员？（一步一步跟着做）
+
+第1步：找到 admins.json 文件
+
+用 FTP 或空间自带的文件管理器，找到网站根目录下的 admins.json 文件。
+
+第2步：用记事本打开它
+
+· Windows：右键 → 打开方式 → 记事本
+· Mac：右键 → 打开方式 → 文本编辑
+
+⚠️ 千万不要用 Word 打开！
+
+第3步：复制下面这段内容
+
+```
+    {
+      "username": "新用户名",
+      "password": "新密码",
+      "permissions": {
+        "upload": true,
+        "delete": true,
+        "mkdir": true
+      }
+    }
+```
+
+第4步：粘贴到合适的位置
+
+找到最后一个管理员后面的 }，在它前面粘贴。
+
+示意图：
+
+```
+{
+  "admins": [
+    {
+      "username": "老账号",
+      "password": "老密码",
+      "permissions": { ... }
+    },
+    ← 把内容粘贴到这里
+  ]
+}
+```
+
+第5步：修改用户名和密码
+
+把 新用户名 改成您想要的用户名（比如 xiaoming）
+把 新密码 改成您想要的密码（比如 123456）
+
+修改后：
+
+```json
+    {
+      "username": "xiaoming",
+      "password": "123456",
+      "permissions": {
+        "upload": true,
+        "delete": true,
+        "mkdir": true
+      }
+    }
+```
+
+第6步：设置权限（重要！）
+
+根据您的需要修改 true 或 false：
+
+您想要的权限 改成这样
+什么都能做（上传、删除、新建文件夹） "upload": true, "delete": true, "mkdir": true
+只能上传文件，不能删除 "upload": true, "delete": false, "mkdir": false
+只能删除文件，不能上传 "upload": false, "delete": true, "mkdir": false
+只能新建文件夹 "upload": false, "delete": false, "mkdir": true
+只能看，不能做任何操作 "upload": false, "delete": false, "mkdir": false
+
+第7步：检查逗号
+
+💡 这是最容易出错的地方！请仔细看：
+
+· 两个管理员之间要有逗号
+· 最后一个管理员后面不要有逗号
+
+正确示例（两个管理员）：
+
+```json
+{
+  "admins": [
+    {
+      "username": "admin1",
+      "password": "111",
+      "permissions": { "upload": true, "delete": true, "mkdir": true }
+    },   ← 注意这里有逗号
+    {
+      "username": "admin2",
+      "password": "222",
+      "permissions": { "upload": true, "delete": false, "mkdir": false }
+    }    ← 注意这里没有逗号
+  ]
+}
+```
+
+第8步：保存文件
+
+点击“文件” → “保存”，或者按快捷键 Ctrl+S（Windows）/ Command+S（Mac）
+
+第9步：上传到服务器
+
+把修改好的 admins.json 重新上传到网站根目录（覆盖原来的文件）
+
+第10步：测试登录
+
+打开您的网站，点击右上角“管理员登录”，输入您刚添加的用户名和密码，看看能否登录成功。
+
+---
+
+五、完整示例（三个管理员）
+
+假设您想要三个管理员：
+
+用户名 密码 想让他做什么
+boss boss123 什么都能做
+zhangsan zs666 只能上传文件
+lisi ls888 只能删除文件
+
+那么 admins.json 应该写成：
+
+```json
+{
+  "admins": [
+    {
+      "username": "boss",
+      "password": "boss123",
+      "permissions": {
+        "upload": true,
+        "delete": true,
+        "mkdir": true
+      }
+    },
+    {
+      "username": "zhangsan",
+      "password": "zs666",
+      "permissions": {
+        "upload": true,
+        "delete": false,
+        "mkdir": false
+      }
+    },
+    {
+      "username": "lisi",
+      "password": "ls888",
+      "permissions": {
+        "upload": false,
+        "delete": true,
+        "mkdir": false
+      }
+    }
+  ]
+}
+```
+
+---
+
+六、如何删除一个管理员？
+
+直接删除对应的那一整段，从 { 到 }（包括花括号）。注意保留正确的逗号格式。
+
+---
+
+七、常见问题解答
+
+Q1：我改了文件，但登录时提示“用户名或密码错误”？
+
+可能的原因：
+
+1. 文件没保存 → 重新保存
+2. 文件名写错了 → 必须是 admins.json（全部小写）
+3. 格式错了 → 检查逗号和花括号
+4. 没上传到服务器 → 重新上传覆盖
+
+Q2：我不小心把文件改坏了，登录不了了怎么办？
+
+解决方法：
+
+1. 删除服务器上的 admins.json
+2. 重新创建一个新的，复制下面的内容进去：
+
+```json
+{
+  "admins": [
+    {
+      "username": "skyIshier",
+      "password": "shier",
+      "permissions": {
+        "upload": true,
+        "delete": true,
+        "mkdir": true
+      }
+    }
+  ]
+}
+```
+
+1. 上传到服务器，就可以用 skyIshier / shier 登录了
+
+Q3：逗号到底怎么加？我还是搞不懂！
+
+记住三句话：
+
+· 第一个管理员前面没有逗号
+· 两个管理员中间加一个逗号
+· 最后一个管理员后面不加逗号
+
+看这个图：
+
+```
+管理员1  ← 前面没有逗号
+,
+管理员2  ← 前面有逗号
+,
+管理员3  ← 前面有逗号
+        ← 后面没有逗号
+```
+
+Q4：true 和 false 是什么意思？
+
+· true = 是 = 允许 = 可以
+· false = 否 = 禁止 = 不可以
+
+就像开关一样，true 是开，false 是关。
+
+---
+
+八、权限速查表（复制粘贴直接用）
+
+全能型（什么都能做）
+
+```json
+"upload": true, "delete": true, "mkdir": true
+```
+
+只能上传
+
+```json
+"upload": true, "delete": false, "mkdir": false
+```
+
+只能删除
+
+```json
+"upload": false, "delete": true, "mkdir": false
+```
+
+只能新建文件夹
+
+```json
+"upload": false, "delete": false, "mkdir": true
+```
+
+上传 + 新建文件夹（不能删除）
+
+```json
+"upload": true, "delete": false, "mkdir": true
+```
+
+只能看（什么都不能做）
+
+```json
+"upload": false, "delete": false, "mkdir": false
+```
+
+---
+
+九、最后提醒
+
+1. 文件名必须完全一样：admins.json（不要写成 admins.json.txt 或 Admins.json）
+2. 放在和 api.php 相同的目录（通常是 htdocs 文件夹）
+3. 修改后一定要重新上传覆盖
+4. 每改一次都要保存并上传
+
+---
